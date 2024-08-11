@@ -26,31 +26,53 @@ bot = telebot.TeleBot(API_KEY)
 # Function for No Ads shortening API call
 def shorten_link(link):
     try:
-        r = requests.get(f'https://{DOMAIN}/api?api={ADLINKFLY_KEY}&url={link}&type=0')
+        url = f'https://{DOMAIN}/api?api={ADLINKFLY_KEY}&url={link}&type=0'
+        print(f'Sending request to: {url}')  # Debug statement
+        r = requests.get(url)
+        print(f'Response status code: {r.status_code}')  # Debug statement
+
         if r.status_code == 200:
             response = json.loads(r.text)
-            return response['shortenedUrl']
+            print(f'Response JSON: {response}')  # Debug statement
+            return response.get('shortenedUrl')
         else:
             print(f'Request failed with status code: {r.status_code}')
             print(f'Response content: {r.text}')
             return None
+    except requests.RequestException as e:
+        print(f'Request exception occurred: {str(e)}')
+        return None
+    except json.JSONDecodeError as e:
+        print(f'JSON decode error: {str(e)}')
+        return None
     except Exception as e:
-        print(f'An error occurred: {str(e)}')
+        print(f'An unexpected error occurred: {str(e)}')
         return None
 
 # Function for With Ads shortening API call
 def shorten_link_withads(link):
     try:
-        r = requests.get(f'https://{DOMAIN}/api?api={ADLINKFLY_KEY}&url={link}')
+        url = f'https://{DOMAIN}/api?api={ADLINKFLY_KEY}&url={link}'
+        print(f'Sending request to: {url}')  # Debug statement
+        r = requests.get(url)
+        print(f'Response status code: {r.status_code}')  # Debug statement
+
         if r.status_code == 200:
             response = json.loads(r.text)
-            return response['shortenedUrl']
+            print(f'Response JSON: {response}')  # Debug statement
+            return response.get('shortenedUrl')
         else:
             print(f'Request failed with status code: {r.status_code}')
             print(f'Response content: {r.text}')
             return None
+    except requests.RequestException as e:
+        print(f'Request exception occurred: {str(e)}')
+        return None
+    except json.JSONDecodeError as e:
+        print(f'JSON decode error: {str(e)}')
+        return None
     except Exception as e:
-        print(f'An error occurred: {str(e)}')
+        print(f'An unexpected error occurred: {str(e)}')
         return None
 
 # Function to check if the URL is valid
@@ -139,18 +161,22 @@ def handle_text(message):
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
-    file_info = bot.get_file(message.photo[-1].file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-    image = Image.open(BytesIO(downloaded_file))
-    text = pytesseract.image_to_string(image)
-    links = extract_urls(text)
-    if links:
-        bot.send_message(message.chat.id, "Processing links from image! Please wait...")
-        shortened_links = process_bulk_links(links)
-        response_message = "\n".join(shortened_links)
-        bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
-    else:
-        bot.send_message(message.chat.id, "No valid URLs found in the image.")
+    try:
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+        image = Image.open(BytesIO(downloaded_file))
+        text = pytesseract.image_to_string(image)
+        links = extract_urls(text)
+        if links:
+            bot.send_message(message.chat.id, "Processing links from image! Please wait...")
+            shortened_links = process_bulk_links(links)
+            response_message = "\n".join(shortened_links)
+            bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
+        else:
+            bot.send_message(message.chat.id, "No valid URLs found in the image.")
+    except Exception as e:
+        print(f'Error processing photo: {str(e)}')
+        bot.send_message(message.chat.id, "An error occurred while processing the image.")
 
 keep_alive()
 bot.polling()
