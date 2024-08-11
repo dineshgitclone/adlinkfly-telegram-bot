@@ -17,8 +17,8 @@ API_KEY = os.environ.get('BOT_TOKEN') or os.getenv('BOT_TOKEN')
 ADLINKFLY_KEY = os.environ.get('ADLINKFLY_TOKEN') or os.getenv('ADLINKFLY_TOKEN')
 START = os.environ.get('START') or os.getenv('START')
 HELP = os.environ.get('HELP') or os.getenv('HELP')
-START_MESSAGE = START.replace("old", "new")
-HELP_MESSAGE = HELP.replace("oldhelp", "newhelp")
+START_MESSAGE = START.replace("\\n", "\n")
+HELP_MESSAGE = HELP.replace("\\n", "\n")
 
 bot = telebot.TeleBot(API_KEY)    #create bot instance
 
