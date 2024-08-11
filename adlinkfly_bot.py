@@ -27,52 +27,32 @@ bot = telebot.TeleBot(API_KEY)
 def shorten_link(link):
     try:
         url = f'https://{DOMAIN}/api?api={ADLINKFLY_KEY}&url={link}&type=0'
-        print(f'Sending request to: {url}')  # Debug statement
         r = requests.get(url)
-        print(f'Response status code: {r.status_code}')  # Debug statement
-
         if r.status_code == 200:
             response = json.loads(r.text)
-            print(f'Response JSON: {response}')  # Debug statement
             return response.get('shortenedUrl')
         else:
             print(f'Request failed with status code: {r.status_code}')
             print(f'Response content: {r.text}')
             return None
-    except requests.RequestException as e:
-        print(f'Request exception occurred: {str(e)}')
-        return None
-    except json.JSONDecodeError as e:
-        print(f'JSON decode error: {str(e)}')
-        return None
     except Exception as e:
-        print(f'An unexpected error occurred: {str(e)}')
+        print(f'An error occurred: {str(e)}')
         return None
 
 # Function for With Ads shortening API call
 def shorten_link_withads(link):
     try:
         url = f'https://{DOMAIN}/api?api={ADLINKFLY_KEY}&url={link}'
-        print(f'Sending request to: {url}')  # Debug statement
         r = requests.get(url)
-        print(f'Response status code: {r.status_code}')  # Debug statement
-
         if r.status_code == 200:
             response = json.loads(r.text)
-            print(f'Response JSON: {response}')  # Debug statement
             return response.get('shortenedUrl')
         else:
             print(f'Request failed with status code: {r.status_code}')
             print(f'Response content: {r.text}')
             return None
-    except requests.RequestException as e:
-        print(f'Request exception occurred: {str(e)}')
-        return None
-    except json.JSONDecodeError as e:
-        print(f'JSON decode error: {str(e)}')
-        return None
     except Exception as e:
-        print(f'An unexpected error occurred: {str(e)}')
+        print(f'An error occurred: {str(e)}')
         return None
 
 # Function to check if the URL is valid
@@ -93,18 +73,17 @@ def extract_urls(text):
     return urls
 
 # Function to process and shorten multiple links
-def process_bulk_links(links, with_ads=False):
-    shortened_links = []
+def process_bulk_links(text, links, with_ads=False):
     for link in links:
         if is_valid_url(link):
             shortened_link = shorten_link_withads(link) if with_ads else shorten_link(link)
             if shortened_link:
-                shortened_links.append(shortened_link)
+                text = text.replace(link, shortened_link)
             else:
-                shortened_links.append(f'Failed to shorten: {link}')
+                text = text.replace(link, f'Failed to shorten: {link}')
         else:
-            shortened_links.append(f'Invalid URL: {link}')
-    return shortened_links
+            text = text.replace(link, f'Invalid URL: {link}')
+    return text
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -140,8 +119,7 @@ def handle_bulk_or_text(message):
         if links:
             bot.send_message(message.chat.id, "Processing links! Please wait...")
             with_ads = True  # Set to False if you want no-ads shortening
-            shortened_links = process_bulk_links(links, with_ads)
-            response_message = "\n".join(shortened_links)
+            response_message = process_bulk_links(message.text, links, with_ads)
             bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
         else:
             bot.send_message(message.chat.id, "No valid URLs found in the message.")
@@ -153,8 +131,7 @@ def handle_text(message):
     links = extract_urls(message.text)
     if links:
         bot.send_message(message.chat.id, "Processing links! Please wait...")
-        shortened_links = process_bulk_links(links)
-        response_message = "\n".join(shortened_links)
+        response_message = process_bulk_links(message.text, links)
         bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
     else:
         bot.send_message(message.chat.id, "No valid URLs found in the message.")
@@ -169,9 +146,9 @@ def handle_photo(message):
         links = extract_urls(text)
         if links:
             bot.send_message(message.chat.id, "Processing links from image! Please wait...")
-            shortened_links = process_bulk_links(links)
-            response_message = "\n".join(shortened_links)
-            bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
+            response_message = process_bulk_links(text, links)
+            # Send the image and response text
+            bot.send_photo(message.chat.id, downloaded_file, caption=response_message)
         else:
             bot.send_message(message.chat.id, "No valid URLs found in the image.")
     except Exception as e:
