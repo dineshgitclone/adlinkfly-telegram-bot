@@ -6,3 +6,5 @@ pytelegrambotapi
 regex
 requests
 python-dotenv
+Pillow
+pytesseract
