@@ -18,6 +18,8 @@ API_KEY = os.getenv('BOT_TOKEN')
 ADLINKFLY_KEY = os.getenv('ADLINKFLY_TOKEN')
 START = os.getenv('START')
 HELP = os.getenv('HELP')
+HEADER = os.getenv('HEADER', 'Default Header Text')
+FOOTER = os.getenv('FOOTER', 'Default Footer Text')
 START_MESSAGE = START.replace("\\n", "\n")
 HELP_MESSAGE = HELP.replace("\\n", "\n")
 
@@ -73,7 +75,10 @@ def extract_urls(text):
     return urls
 
 # Function to process and shorten multiple links
-def process_bulk_links(text, links, with_ads=False):
+def process_bulk_links(text, links, with_ads=False, header=None, footer=None):
+    if header:
+        text = f"{header}\n\n{text}"
+        
     for link in links:
         if is_valid_url(link):
             shortened_link = shorten_link_withads(link) if with_ads else shorten_link(link)
@@ -83,6 +88,10 @@ def process_bulk_links(text, links, with_ads=False):
                 text = text.replace(link, f'Failed to shorten: {link}')
         else:
             text = text.replace(link, f'Invalid URL: {link}')
+            
+    if footer:
+        text = f"{text}\n\n{footer}"
+    
     return text
 
 @bot.message_handler(commands=['start'])
@@ -119,7 +128,7 @@ def handle_bulk_or_text(message):
         if links:
             bot.send_message(message.chat.id, "Processing links! Please wait...")
             with_ads = True  # Set to False if you want no-ads shortening
-            response_message = process_bulk_links(message.text, links, with_ads)
+            response_message = process_bulk_links(message.text, links, with_ads, HEADER, FOOTER)
             bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
         else:
             bot.send_message(message.chat.id, "No valid URLs found in the message.")
@@ -131,7 +140,7 @@ def handle_text(message):
     links = extract_urls(message.text)
     if links:
         bot.send_message(message.chat.id, "Processing links! Please wait...")
-        response_message = process_bulk_links(message.text, links)
+        response_message = process_bulk_links(message.text, links, header=HEADER, footer=FOOTER)
         bot.reply_to(message, response_message, parse_mode='Markdown', disable_web_page_preview=True)
     else:
         bot.send_message(message.chat.id, "No valid URLs found in the message.")
@@ -139,29 +148,21 @@ def handle_text(message):
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     try:
-        # Retrieve file information
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
-        
-        # Open the image and process it
         image = Image.open(BytesIO(downloaded_file))
         text = pytesseract.image_to_string(image)
-
-        # Extract URLs from the extracted text
         links = extract_urls(text)
         if links:
             bot.send_message(message.chat.id, "Processing links from image! Please wait...")
-            response_message = process_bulk_links(text, links)
-            
+            response_message = process_bulk_links(text, links, header=HEADER, footer=FOOTER)
             # Send the image and response text
             bot.send_photo(message.chat.id, downloaded_file, caption=response_message)
         else:
             bot.send_message(message.chat.id, "No valid URLs found in the image.")
-
     except Exception as e:
-        # Log and report the error
         print(f'Error processing photo: {str(e)}')
-        bot.send_message(message.chat.id, f"An error occurred while processing the image: {str(e)}")
+        bot.send_message(message.chat.id, "An error occurred while processing the image.")
 
 keep_alive()
 bot.polling()
