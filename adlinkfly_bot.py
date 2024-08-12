@@ -148,21 +148,31 @@ def handle_text(message):
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     try:
+        # Get the file info and download the file
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
+        
+        # Open the image file
         image = Image.open(BytesIO(downloaded_file))
+        
+        # Use pytesseract to extract text from the image
         text = pytesseract.image_to_string(image)
+        
+        # Extract URLs from the text
         links = extract_urls(text)
+        
         if links:
-            bot.send_message(message.chat.id, "Processing links from image! Please wait...")
+            # Process the links to shorten them
+            bot.send_message(message.chat.id, "Processing links from the image! Please wait...")
             response_message = process_bulk_links(text, links, header=HEADER, footer=FOOTER)
-            # Send the image and response text
+            
+            # Send the image with the processed text as a caption
             bot.send_photo(message.chat.id, downloaded_file, caption=response_message)
         else:
             bot.send_message(message.chat.id, "No valid URLs found in the image.")
     except Exception as e:
         print(f'Error processing photo: {str(e)}')
-        bot.send_message(message.chat.id, "An error occurred while processing the image.")
+        bot.send_message(message.chat.id, "An error occurred while processing the image. Please try again.")
 
 keep_alive()
 bot.polling()
