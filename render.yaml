@@ -2,7 +2,7 @@ services:
 - type: web
   name: adlinkfly-telegram-bot
   runtime: python
-  repo: https://github.com/techishfellow/adlinkfly-telegram-bot.git
+  repo: https://github.com/dineshgitclone/adlinkfly-telegram-bot.git
   plan: free
   branch: main
   buildCommand: pip install -r requirements.txt
