@@ -19,7 +19,7 @@ ADLINKFLY_KEY = os.getenv('ADLINKFLY_TOKEN')
 START = os.getenv('START')
 HELP = os.getenv('HELP')
 HEADER = os.getenv('HEADER', '🗂 Movie File Search Bot\nhttps://t.me/+WdFGEq5S9MkwODE1')
-FOOTER = os.getenv('FOOTER', '🔴 How to open link\nhttps://t.me/+vHs4bp07QLYxNjA1')
+FOOTER = os.getenv('FOOTER', '🔴 How to open link\nhttps://t.me/+vHs4bp07QLYxNjA1\n@RRlinkz')
 START_MESSAGE = START.replace("\\n", "\n")
 HELP_MESSAGE = HELP.replace("\\n", "\n")
 
